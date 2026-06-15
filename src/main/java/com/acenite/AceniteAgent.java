@@ -1,26 +1,100 @@
 package com.acenite;
 
-import java.util.Timer;
-import java.util.TimerTask;
+import com.acenite.internal.HeartbeatScheduler;
+import com.acenite.internal.OpenTelemetryBootstrap;
+import io.opentelemetry.api.trace.Tracer;
 
-public class AceniteAgent {
+import java.util.concurrent.atomic.AtomicBoolean;
 
-    private final String apiKey;
+public final class AceniteAgent {
+    private static final AtomicBoolean STARTED = new AtomicBoolean(false);
+    private static final Object LOCK = new Object();
 
-    public AceniteAgent(String apiKey) {
-        this.apiKey = apiKey;
+    private static HeartbeatScheduler heartbeatScheduler;
+    private static OpenTelemetryBootstrap openTelemetryBootstrap;
+    private static boolean shutdownHookRegistered;
+
+    private AceniteAgent() {
     }
 
-    public void start() {
-        System.out.println("Acenite agent starting...");
-        System.out.println("API Key: " + apiKey);
+    public static void start(AceniteAgentConfig config) {
+        AceniteAgentConfig validatedConfig = AceniteAgentConfig.validate(config);
 
-        Timer timer = new Timer(true);
-        timer.scheduleAtFixedRate(new TimerTask() {
-            @Override
-            public void run() {
-                System.out.println("collecting metrics...");
+        synchronized (LOCK) {
+            if (STARTED.get()) {
+                return;
             }
-        }, 0, 5000);
+
+            OpenTelemetryBootstrap candidateOpenTelemetry = null;
+            HeartbeatScheduler candidateHeartbeatScheduler = null;
+
+            try {
+                if (validatedConfig.enableLogging()) {
+                    candidateOpenTelemetry = OpenTelemetryBootstrap.start(
+                            validatedConfig.apiKey(),
+                            validatedConfig.serviceName()
+                    );
+                }
+
+                if (validatedConfig.enableHeartbeat()) {
+                    candidateHeartbeatScheduler = HeartbeatScheduler.start(
+                            validatedConfig.apiKey(),
+                            validatedConfig.heartbeatIntervalSeconds()
+                    );
+                }
+
+                openTelemetryBootstrap = candidateOpenTelemetry;
+                heartbeatScheduler = candidateHeartbeatScheduler;
+                STARTED.set(true);
+                registerShutdownHook();
+            } catch (RuntimeException error) {
+                if (candidateHeartbeatScheduler != null) {
+                    candidateHeartbeatScheduler.stop();
+                }
+                if (candidateOpenTelemetry != null) {
+                    candidateOpenTelemetry.shutdown();
+                }
+                throw error;
+            }
+        }
+    }
+
+    public static Tracer getTracer() {
+        synchronized (LOCK) {
+            if (openTelemetryBootstrap != null) {
+                return openTelemetryBootstrap.getTracer();
+            }
+        }
+
+        return OpenTelemetryBootstrap.noopTracer();
+    }
+
+    public static void stop() {
+        synchronized (LOCK) {
+            if (heartbeatScheduler != null) {
+                heartbeatScheduler.stop();
+                heartbeatScheduler = null;
+            }
+
+            if (openTelemetryBootstrap != null) {
+                openTelemetryBootstrap.shutdown();
+                openTelemetryBootstrap = null;
+            }
+
+            STARTED.set(false);
+        }
+    }
+
+    static boolean isStarted() {
+        return STARTED.get();
+    }
+
+    private static void registerShutdownHook() {
+        if (shutdownHookRegistered) {
+            return;
+        }
+
+        Runtime.getRuntime().addShutdownHook(new Thread(AceniteAgent::stop, "acenite-agent-shutdown"));
+        shutdownHookRegistered = true;
     }
 }
