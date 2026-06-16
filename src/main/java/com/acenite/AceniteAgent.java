@@ -1,6 +1,7 @@
 package com.acenite;
 
 import com.acenite.internal.HeartbeatScheduler;
+import com.acenite.internal.HostMetricsScheduler;
 import com.acenite.internal.OpenTelemetryBootstrap;
 import io.opentelemetry.api.trace.Tracer;
 
@@ -11,6 +12,7 @@ public final class AceniteAgent {
     private static final Object LOCK = new Object();
 
     private static HeartbeatScheduler heartbeatScheduler;
+    private static HostMetricsScheduler hostMetricsScheduler;
     private static OpenTelemetryBootstrap openTelemetryBootstrap;
     private static boolean shutdownHookRegistered;
 
@@ -27,6 +29,7 @@ public final class AceniteAgent {
 
             OpenTelemetryBootstrap candidateOpenTelemetry = null;
             HeartbeatScheduler candidateHeartbeatScheduler = null;
+            HostMetricsScheduler candidateHostMetricsScheduler = null;
 
             try {
                 if (validatedConfig.enableLogging()) {
@@ -43,11 +46,25 @@ public final class AceniteAgent {
                     );
                 }
 
+                if (validatedConfig.enableHostMetrics()) {
+                    candidateHostMetricsScheduler = HostMetricsScheduler.start(
+                            validatedConfig.apiKey(),
+                            validatedConfig.serviceName(),
+                            validatedConfig.instanceId(),
+                            validatedConfig.hostname(),
+                            validatedConfig.hostMetricsIntervalSeconds()
+                    );
+                }
+
                 openTelemetryBootstrap = candidateOpenTelemetry;
                 heartbeatScheduler = candidateHeartbeatScheduler;
+                hostMetricsScheduler = candidateHostMetricsScheduler;
                 STARTED.set(true);
                 registerShutdownHook();
             } catch (RuntimeException error) {
+                if (candidateHostMetricsScheduler != null) {
+                    candidateHostMetricsScheduler.stop();
+                }
                 if (candidateHeartbeatScheduler != null) {
                     candidateHeartbeatScheduler.stop();
                 }
@@ -74,6 +91,11 @@ public final class AceniteAgent {
             if (heartbeatScheduler != null) {
                 heartbeatScheduler.stop();
                 heartbeatScheduler = null;
+            }
+
+            if (hostMetricsScheduler != null) {
+                hostMetricsScheduler.stop();
+                hostMetricsScheduler = null;
             }
 
             if (openTelemetryBootstrap != null) {

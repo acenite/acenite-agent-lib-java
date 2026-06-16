@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.net.InetAddress;
 
 public final class AceniteAgentConfig {
     private final String apiKey;
@@ -13,6 +14,10 @@ public final class AceniteAgentConfig {
     private final boolean enableLogging;
     private final boolean enableHeartbeat;
     private final double heartbeatIntervalSeconds;
+    private final boolean enableHostMetrics;
+    private final double hostMetricsIntervalSeconds;
+    private final String instanceId;
+    private final String hostname;
     private final String framework;
     private final List<String> instrumentations;
 
@@ -22,6 +27,10 @@ public final class AceniteAgentConfig {
         this.enableLogging = builder.enableLogging;
         this.enableHeartbeat = builder.enableHeartbeat;
         this.heartbeatIntervalSeconds = builder.heartbeatIntervalSeconds;
+        this.enableHostMetrics = builder.enableHostMetrics;
+        this.hostMetricsIntervalSeconds = builder.hostMetricsIntervalSeconds;
+        this.hostname = normalizeHostName(builder.hostname);
+        this.instanceId = normalizeInstanceId(builder.instanceId, this.hostname);
         this.framework = builder.framework;
         this.instrumentations = Collections.unmodifiableList(new ArrayList<>(builder.instrumentations));
     }
@@ -43,6 +52,9 @@ public final class AceniteAgentConfig {
 
         if (config.heartbeatIntervalSeconds <= 0) {
             throw new IllegalArgumentException("heartbeatIntervalSeconds must be greater than 0");
+        }
+        if (config.hostMetricsIntervalSeconds <= 0) {
+            throw new IllegalArgumentException("hostMetricsIntervalSeconds must be greater than 0");
         }
 
         if (config.framework != null && !AceniteConstants.ALLOWED_FRAMEWORKS.contains(config.framework)) {
@@ -78,6 +90,22 @@ public final class AceniteAgentConfig {
         return heartbeatIntervalSeconds;
     }
 
+    public boolean enableHostMetrics() {
+        return enableHostMetrics;
+    }
+
+    public double hostMetricsIntervalSeconds() {
+        return hostMetricsIntervalSeconds;
+    }
+
+    public String instanceId() {
+        return instanceId;
+    }
+
+    public String hostname() {
+        return hostname;
+    }
+
     public String framework() {
         return framework;
     }
@@ -92,6 +120,10 @@ public final class AceniteAgentConfig {
         private boolean enableLogging = true;
         private boolean enableHeartbeat = true;
         private double heartbeatIntervalSeconds = 60.0;
+        private boolean enableHostMetrics = true;
+        private double hostMetricsIntervalSeconds = 60.0;
+        private String instanceId;
+        private String hostname;
         private String framework;
         private final List<String> instrumentations = new ArrayList<>();
 
@@ -123,6 +155,26 @@ public final class AceniteAgentConfig {
             return this;
         }
 
+        public Builder enableHostMetrics(boolean enableHostMetrics) {
+            this.enableHostMetrics = enableHostMetrics;
+            return this;
+        }
+
+        public Builder hostMetricsIntervalSeconds(double hostMetricsIntervalSeconds) {
+            this.hostMetricsIntervalSeconds = hostMetricsIntervalSeconds;
+            return this;
+        }
+
+        public Builder instanceId(String instanceId) {
+            this.instanceId = instanceId;
+            return this;
+        }
+
+        public Builder hostname(String hostname) {
+            this.hostname = hostname;
+            return this;
+        }
+
         public Builder framework(String framework) {
             this.framework = framework;
             return this;
@@ -145,5 +197,28 @@ public final class AceniteAgentConfig {
             return new AceniteAgentConfig(this);
         }
     }
-}
 
+    private static String normalizeHostName(String configuredHostname) {
+        if (configuredHostname != null && !configuredHostname.isBlank()) {
+            return configuredHostname.trim();
+        }
+
+        try {
+            String localHostName = InetAddress.getLocalHost().getHostName();
+            if (localHostName != null && !localHostName.isBlank()) {
+                return localHostName.trim();
+            }
+        } catch (RuntimeException | java.net.UnknownHostException ignored) {
+            // Fall through to a stable non-empty placeholder.
+        }
+
+        return "unknown-host";
+    }
+
+    private static String normalizeInstanceId(String configuredInstanceId, String hostname) {
+        if (configuredInstanceId != null && !configuredInstanceId.isBlank()) {
+            return configuredInstanceId.trim();
+        }
+        return hostname;
+    }
+}
