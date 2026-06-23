@@ -22,7 +22,7 @@ public final class HeartbeatScheduler {
         long intervalMillis = Math.max(1L, Math.round(intervalSeconds * 1000.0));
         executorService.scheduleWithFixedDelay(
                 () -> heartbeatClient.sendHeartbeat(apiKey, intervalSeconds),
-                intervalMillis,
+                0,
                 intervalMillis,
                 TimeUnit.MILLISECONDS
         );
@@ -34,4 +34,3 @@ public final class HeartbeatScheduler {
         executorService.shutdownNow();
     }
 }
-

@@ -12,6 +12,7 @@ public final class AceniteAgentConfig {
     private final String apiKey;
     private final String serviceName;
     private final boolean enableLogging;
+    private final boolean enableApplicationMonitoring;
     private final boolean enableHeartbeat;
     private final double heartbeatIntervalSeconds;
     private final boolean enableHostMetrics;
@@ -25,6 +26,9 @@ public final class AceniteAgentConfig {
         this.apiKey = builder.apiKey;
         this.serviceName = builder.serviceName;
         this.enableLogging = builder.enableLogging;
+        this.enableApplicationMonitoring = builder.enableApplicationMonitoring == null
+                ? builder.enableLogging
+                : builder.enableApplicationMonitoring;
         this.enableHeartbeat = builder.enableHeartbeat;
         this.heartbeatIntervalSeconds = builder.heartbeatIntervalSeconds;
         this.enableHostMetrics = builder.enableHostMetrics;
@@ -50,11 +54,11 @@ public final class AceniteAgentConfig {
             throw new IllegalArgumentException("serviceName must not be blank");
         }
 
-        if (config.heartbeatIntervalSeconds <= 0) {
-            throw new IllegalArgumentException("heartbeatIntervalSeconds must be greater than 0");
+        if (config.heartbeatIntervalSeconds < 15 || config.heartbeatIntervalSeconds > 300) {
+            throw new IllegalArgumentException("heartbeatIntervalSeconds must be between 15 and 300 seconds");
         }
-        if (config.hostMetricsIntervalSeconds <= 0) {
-            throw new IllegalArgumentException("hostMetricsIntervalSeconds must be greater than 0");
+        if (config.hostMetricsIntervalSeconds < 15 || config.hostMetricsIntervalSeconds > 300) {
+            throw new IllegalArgumentException("hostMetricsIntervalSeconds must be between 15 and 300 seconds");
         }
 
         if (config.framework != null && !AceniteConstants.ALLOWED_FRAMEWORKS.contains(config.framework)) {
@@ -84,6 +88,10 @@ public final class AceniteAgentConfig {
 
     public boolean enableHeartbeat() {
         return enableHeartbeat;
+    }
+
+    public boolean enableApplicationMonitoring() {
+        return enableApplicationMonitoring;
     }
 
     public double heartbeatIntervalSeconds() {
@@ -118,6 +126,7 @@ public final class AceniteAgentConfig {
         private String apiKey;
         private String serviceName = "unknown-service";
         private boolean enableLogging = true;
+        private Boolean enableApplicationMonitoring;
         private boolean enableHeartbeat = true;
         private double heartbeatIntervalSeconds = 60.0;
         private boolean enableHostMetrics = true;
@@ -147,6 +156,11 @@ public final class AceniteAgentConfig {
 
         public Builder enableHeartbeat(boolean enableHeartbeat) {
             this.enableHeartbeat = enableHeartbeat;
+            return this;
+        }
+
+        public Builder enableApplicationMonitoring(boolean enableApplicationMonitoring) {
+            this.enableApplicationMonitoring = enableApplicationMonitoring;
             return this;
         }
 

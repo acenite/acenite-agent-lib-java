@@ -12,7 +12,7 @@ public final class AceniteConstants {
     public static final String ACENITE_URL = "https://ingest.acenite.com";
     public static final String ALLOW_ENDPOINT_OVERRIDE_ENV = "ACENITE_AGENT_ALLOW_ENDPOINT_OVERRIDE";
     public static final String INGEST_URL_ENV = "ACENITE_AGENT_INGEST_URL";
-    public static final Set<String> ALLOWED_FRAMEWORKS = Set.of();
+    public static final Set<String> ALLOWED_FRAMEWORKS = Set.of("spring-boot");
     public static final Set<String> ALLOWED_INSTRUMENTATIONS = Set.of();
 
     private AceniteConstants() {
@@ -95,4 +95,3 @@ public final class AceniteConstants {
         return true;
     }
 }
-

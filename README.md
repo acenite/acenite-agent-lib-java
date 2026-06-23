@@ -1,12 +1,26 @@
 # Acenite Agent (Java)
 
-Java services can enable lightweight host resource metrics alongside tracing and heartbeat monitoring:
+The `com.acenite:acenite-agent-lib-java:0.2.0` artifact includes Spring Boot auto-configuration for Spring MVC. Configure a normal Boot application with:
+
+```properties
+acenite.api-key=${ACENITE_API_KEY}
+acenite.service-name=orders-service
+acenite.application-monitoring-enabled=true
+acenite.heartbeat-enabled=true
+acenite.heartbeat-interval-seconds=60
+acenite.host-metrics-enabled=true
+acenite.host-metrics-interval-seconds=60
+```
+
+The integration follows the Spring lifecycle and records request method, route, status, duration, failures, and exceptions. The core builder API remains available:
 
 ```java
 AceniteAgent.start(
     AceniteAgentConfig.builder()
         .apiKey("your-api-key")
         .serviceName("orders-service")
+        .framework("spring-boot")
+        .enableApplicationMonitoring(true)
         .enableHostMetrics(true)
         .hostMetricsIntervalSeconds(60)
         .instanceId("server-01")
@@ -14,5 +28,5 @@ AceniteAgent.start(
 );
 ```
 
-Host metrics are sent to `/server/metrics/host` separately from heartbeat requests.
+Host metrics are sent to `/metrics/host` separately from heartbeat requests.
 `network_rx_bytes` and `network_tx_bytes` are cumulative host counters; the Acenite backend calculates deltas and chart rates.

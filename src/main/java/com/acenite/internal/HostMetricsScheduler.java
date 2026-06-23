@@ -34,7 +34,7 @@ public final class HostMetricsScheduler {
                         hostname,
                         intervalSeconds
                 ),
-                intervalMillis,
+                0,
                 intervalMillis,
                 TimeUnit.MILLISECONDS
         );

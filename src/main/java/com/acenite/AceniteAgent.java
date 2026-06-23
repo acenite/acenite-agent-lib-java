@@ -35,7 +35,7 @@ public final class AceniteAgent {
             HostMetricsScheduler candidateHostMetricsScheduler = null;
 
             try {
-                if (validatedConfig.enableLogging()) {
+                if (validatedConfig.enableApplicationMonitoring()) {
                     candidateOpenTelemetry = OpenTelemetryBootstrap.start(
                             validatedConfig.apiKey(),
                             validatedConfig.serviceName()
