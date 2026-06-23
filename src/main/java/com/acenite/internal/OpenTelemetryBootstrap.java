@@ -25,7 +25,7 @@ public final class OpenTelemetryBootstrap {
 
     public static OpenTelemetryBootstrap start(String apiKey, String serviceName) {
         OtlpHttpSpanExporter exporter = OtlpHttpSpanExporter.builder()
-                .setEndpoint(AceniteConstants.ACENITE_URL + "/monitor/")
+                .setEndpoint(AceniteConstants.resolveAceniteUrl() + "/monitor/")
                 .addHeader("Authorization", "Bearer " + apiKey)
                 .build();
 

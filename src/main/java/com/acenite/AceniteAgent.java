@@ -1,5 +1,6 @@
 package com.acenite;
 
+import com.acenite.internal.AceniteConstants;
 import com.acenite.internal.HeartbeatScheduler;
 import com.acenite.internal.HostMetricsScheduler;
 import com.acenite.internal.OpenTelemetryBootstrap;
@@ -26,6 +27,8 @@ public final class AceniteAgent {
             if (STARTED.get()) {
                 return;
             }
+
+            AceniteConstants.logLocalOverrideIfActive(validatedConfig.enableLogging());
 
             OpenTelemetryBootstrap candidateOpenTelemetry = null;
             HeartbeatScheduler candidateHeartbeatScheduler = null;

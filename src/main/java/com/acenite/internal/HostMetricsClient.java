@@ -53,7 +53,7 @@ public final class HostMetricsClient {
 
         try {
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(AceniteConstants.ACENITE_URL + "/metrics/host"))
+                    .uri(URI.create(AceniteConstants.resolveAceniteUrl() + "/metrics/host"))
                     .timeout(REQUEST_TIMEOUT)
                     .header("Authorization", "Bearer " + apiKey)
                     .header("Content-Type", "application/json")

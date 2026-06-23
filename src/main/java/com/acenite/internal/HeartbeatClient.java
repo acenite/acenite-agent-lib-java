@@ -34,7 +34,7 @@ public final class HeartbeatClient {
 
         try {
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(AceniteConstants.ACENITE_URL + "/heartbeat/"))
+                    .uri(URI.create(AceniteConstants.resolveAceniteUrl() + "/heartbeat/"))
                     .timeout(REQUEST_TIMEOUT)
                     .header("Authorization", "Bearer " + apiKey)
                     .header("Content-Type", "application/json")
