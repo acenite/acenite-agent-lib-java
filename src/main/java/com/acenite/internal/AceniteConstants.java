@@ -12,10 +12,39 @@ public final class AceniteConstants {
     public static final String ACENITE_URL = "https://ingest.acenite.com";
     public static final String ALLOW_ENDPOINT_OVERRIDE_ENV = "ACENITE_AGENT_ALLOW_ENDPOINT_OVERRIDE";
     public static final String INGEST_URL_ENV = "ACENITE_AGENT_INGEST_URL";
+    public static final String ACENITE_ENVIRONMENT_ENV = "ACENITE_ENVIRONMENT";
+    public static final String ACENITE_ENVIRONMENT_DOCS_URL = "https://acenite.com/docs/environments";
     public static final Set<String> ALLOWED_FRAMEWORKS = Set.of("spring-boot");
     public static final Set<String> ALLOWED_INSTRUMENTATIONS = Set.of();
 
     private AceniteConstants() {
+    }
+
+    public record ResolvedEnvironment(String value, boolean defaulted) {}
+
+    public static ResolvedEnvironment resolveAceniteEnvironment() {
+        return resolveAceniteEnvironment(System.getenv());
+    }
+
+    static ResolvedEnvironment resolveAceniteEnvironment(Map<String, String> environment) {
+        if (!environment.containsKey(ACENITE_ENVIRONMENT_ENV)) {
+            return new ResolvedEnvironment("production", true);
+        }
+        String value = environment.get(ACENITE_ENVIRONMENT_ENV);
+        if (!"production".equals(value) && !"development".equals(value)) {
+            throw new IllegalArgumentException(
+                    "ACENITE_ENVIRONMENT must be exactly 'production' or 'development'; see "
+                            + ACENITE_ENVIRONMENT_DOCS_URL
+            );
+        }
+        return new ResolvedEnvironment(value, false);
+    }
+
+    public static void logDefaultEnvironmentWarning(ResolvedEnvironment environment) {
+        if (environment.defaulted()) {
+            LOGGER.warning("ACENITE_ENVIRONMENT is not set; defaulting to production. See "
+                    + ACENITE_ENVIRONMENT_DOCS_URL);
+        }
     }
 
     public static String resolveAceniteUrl() {

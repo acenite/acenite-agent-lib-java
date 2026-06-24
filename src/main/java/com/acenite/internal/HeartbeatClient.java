@@ -29,7 +29,7 @@ public final class HeartbeatClient {
         this.httpClient = httpClient;
     }
 
-    public void sendHeartbeat(String apiKey, double intervalSeconds) {
+    public void sendHeartbeat(String apiKey, double intervalSeconds, String environment) {
         sleepWithJitter(intervalSeconds);
 
         try {
@@ -38,6 +38,7 @@ public final class HeartbeatClient {
                     .timeout(REQUEST_TIMEOUT)
                     .header("Authorization", "Bearer " + apiKey)
                     .header("Content-Type", "application/json")
+                    .header("X-Acenite-Environment", environment)
                     .POST(HttpRequest.BodyPublishers.ofString(payload()))
                     .build();
 
@@ -72,4 +73,3 @@ public final class HeartbeatClient {
                 + "}";
     }
 }
-

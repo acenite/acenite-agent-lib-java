@@ -22,11 +22,13 @@ public final class AceniteAgent {
 
     public static void start(AceniteAgentConfig config) {
         AceniteAgentConfig validatedConfig = AceniteAgentConfig.validate(config);
-
         synchronized (LOCK) {
             if (STARTED.get()) {
                 return;
             }
+
+            AceniteConstants.ResolvedEnvironment environment = AceniteConstants.resolveAceniteEnvironment();
+            AceniteConstants.logDefaultEnvironmentWarning(environment);
 
             AceniteConstants.logLocalOverrideIfActive(validatedConfig.enableLogging());
 
@@ -38,24 +40,27 @@ public final class AceniteAgent {
                 if (validatedConfig.enableApplicationMonitoring()) {
                     candidateOpenTelemetry = OpenTelemetryBootstrap.start(
                             validatedConfig.apiKey(),
-                            validatedConfig.serviceName()
+                            validatedConfig.serviceName(),
+                            environment.value()
                     );
                 }
 
-                if (validatedConfig.enableHeartbeat()) {
+                if (validatedConfig.enableHeartbeat() && environment.value().equals("production")) {
                     candidateHeartbeatScheduler = HeartbeatScheduler.start(
                             validatedConfig.apiKey(),
-                            validatedConfig.heartbeatIntervalSeconds()
+                            validatedConfig.heartbeatIntervalSeconds(),
+                            environment.value()
                     );
                 }
 
-                if (validatedConfig.enableHostMetrics()) {
+                if (validatedConfig.enableHostMetrics() && environment.value().equals("production")) {
                     candidateHostMetricsScheduler = HostMetricsScheduler.start(
                             validatedConfig.apiKey(),
                             validatedConfig.serviceName(),
                             validatedConfig.instanceId(),
                             validatedConfig.hostname(),
-                            validatedConfig.hostMetricsIntervalSeconds()
+                            validatedConfig.hostMetricsIntervalSeconds(),
+                            environment.value()
                     );
                 }
 

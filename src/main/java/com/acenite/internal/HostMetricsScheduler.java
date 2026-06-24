@@ -16,7 +16,8 @@ public final class HostMetricsScheduler {
             String serviceName,
             String instanceId,
             String hostname,
-            double intervalSeconds
+            double intervalSeconds,
+            String environment
     ) {
         HostMetricsClient hostMetricsClient = new HostMetricsClient();
         ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor(task -> {
@@ -32,7 +33,8 @@ public final class HostMetricsScheduler {
                         serviceName,
                         instanceId,
                         hostname,
-                        intervalSeconds
+                        intervalSeconds,
+                        environment
                 ),
                 0,
                 intervalMillis,

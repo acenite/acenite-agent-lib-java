@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class AceniteConstantsTest {
     @Test
@@ -45,6 +46,25 @@ class AceniteConstantsTest {
     void remoteHttpAndHttpsUrlsUseProduction() {
         assertEquals(AceniteConstants.ACENITE_URL, resolve("http://example.com:5001"));
         assertEquals(AceniteConstants.ACENITE_URL, resolve("https://example.com"));
+    }
+
+    @Test
+    void missingEnvironmentDefaultsProduction() {
+        AceniteConstants.ResolvedEnvironment value = AceniteConstants.resolveAceniteEnvironment(Map.of());
+        assertEquals("production", value.value());
+        assertEquals(true, value.defaulted());
+    }
+
+    @Test
+    void explicitEnvironmentsAreStrict() {
+        assertEquals("production", AceniteConstants.resolveAceniteEnvironment(Map.of(
+                AceniteConstants.ACENITE_ENVIRONMENT_ENV, "production")).value());
+        assertEquals("development", AceniteConstants.resolveAceniteEnvironment(Map.of(
+                AceniteConstants.ACENITE_ENVIRONMENT_ENV, "development")).value());
+        for (String invalid : new String[]{"", "Production", " development ", "staging"}) {
+            assertThrows(IllegalArgumentException.class, () -> AceniteConstants.resolveAceniteEnvironment(Map.of(
+                    AceniteConstants.ACENITE_ENVIRONMENT_ENV, invalid)));
+        }
     }
 
     private static String resolve(String url) {

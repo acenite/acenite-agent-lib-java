@@ -47,7 +47,8 @@ public final class HostMetricsClient {
             String serviceName,
             String instanceId,
             String hostname,
-            double intervalSeconds
+            double intervalSeconds,
+            String environment
     ) {
         sleepWithJitter(intervalSeconds);
 
@@ -57,6 +58,7 @@ public final class HostMetricsClient {
                     .timeout(REQUEST_TIMEOUT)
                     .header("Authorization", "Bearer " + apiKey)
                     .header("Content-Type", "application/json")
+                    .header("X-Acenite-Environment", environment)
                     .POST(HttpRequest.BodyPublishers.ofString(payload(serviceName, instanceId, hostname)))
                     .build();
 

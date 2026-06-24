@@ -11,7 +11,7 @@ public final class HeartbeatScheduler {
         this.executorService = executorService;
     }
 
-    public static HeartbeatScheduler start(String apiKey, double intervalSeconds) {
+    public static HeartbeatScheduler start(String apiKey, double intervalSeconds, String environment) {
         HeartbeatClient heartbeatClient = new HeartbeatClient();
         ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor(task -> {
             Thread thread = new Thread(task, "acenite-heartbeat");
@@ -21,7 +21,7 @@ public final class HeartbeatScheduler {
 
         long intervalMillis = Math.max(1L, Math.round(intervalSeconds * 1000.0));
         executorService.scheduleWithFixedDelay(
-                () -> heartbeatClient.sendHeartbeat(apiKey, intervalSeconds),
+                () -> heartbeatClient.sendHeartbeat(apiKey, intervalSeconds, environment),
                 0,
                 intervalMillis,
                 TimeUnit.MILLISECONDS

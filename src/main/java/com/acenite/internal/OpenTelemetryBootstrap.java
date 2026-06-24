@@ -23,15 +23,18 @@ public final class OpenTelemetryBootstrap {
         this.tracerProvider = tracerProvider;
     }
 
-    public static OpenTelemetryBootstrap start(String apiKey, String serviceName) {
+    public static OpenTelemetryBootstrap start(String apiKey, String serviceName, String environment) {
         OtlpHttpSpanExporter exporter = OtlpHttpSpanExporter.builder()
                 .setEndpoint(AceniteConstants.resolveAceniteUrl() + "/monitor/")
                 .addHeader("Authorization", "Bearer " + apiKey)
+                .addHeader("X-Acenite-Environment", environment)
                 .build();
 
         Resource resource = Resource.getDefault().merge(Resource.create(Attributes.of(
                 AttributeKey.stringKey("service.name"),
-                serviceName
+                serviceName,
+                AttributeKey.stringKey("deployment.environment.name"),
+                environment
         )));
 
         SdkTracerProvider tracerProvider = SdkTracerProvider.builder()
