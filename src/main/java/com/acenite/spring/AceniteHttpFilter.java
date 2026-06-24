@@ -3,6 +3,8 @@ package com.acenite.spring;
 import com.acenite.AceniteAgent;
 import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.SpanKind;
+import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.context.Scope;
 import jakarta.servlet.FilterChain;
@@ -13,17 +15,30 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.servlet.HandlerMapping;
 
 import java.io.IOException;
+import java.util.function.Supplier;
 
 final class AceniteHttpFilter extends OncePerRequestFilter {
     private static final AttributeKey<String> METHOD = AttributeKey.stringKey("http.request.method");
     private static final AttributeKey<String> ROUTE = AttributeKey.stringKey("http.route");
     private static final AttributeKey<Long> STATUS = AttributeKey.longKey("http.response.status_code");
     private static final AttributeKey<Long> DURATION = AttributeKey.longKey("http.request.duration_ms");
+    private final Supplier<Tracer> tracerSupplier;
+
+    AceniteHttpFilter() {
+        this(AceniteAgent::getTracer);
+    }
+
+    AceniteHttpFilter(Supplier<Tracer> tracerSupplier) {
+        this.tracerSupplier = tracerSupplier;
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
-        Span span = AceniteAgent.getTracer().spanBuilder(request.getMethod() + " " + request.getRequestURI()).startSpan();
+        Span span = tracerSupplier.get()
+                .spanBuilder(request.getMethod() + " " + request.getRequestURI())
+                .setSpanKind(SpanKind.SERVER)
+                .startSpan();
         long started = System.nanoTime();
         try (Scope ignored = span.makeCurrent()) {
             span.setAttribute(METHOD, request.getMethod());
